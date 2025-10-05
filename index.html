@@ -5,30 +5,49 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js" integrity="sha384-ZBXiYtYQ6hJ2Y0ZNoYuI+Nq5MqWBr+chMrS/RkXpNzQCApHEhOt2aY8EJgqwHLkJ" crossorigin="anonymous"></script>
-    <title>Contacts Example</title>
+    <title>HTMX 1.0</title>
 </head>
-<body>
-    {{ template "form" . }}
-    <hr>
-    {{ template "display" . }}
+<body style="font-family: Arial, sans-serif; margin:0; padding:0;">
+    <!-- Header -->
+    <header style="background-color:#0066B3; color:white; padding:1rem; text-align:center;">
+        <h1 style="background-color: #E30613;">Fafifu</h1>
+    </header>
+
+    <!-- Alert -->
+    <div style="background-color:#FFD100; color:black; padding:0.5rem; text-align:center;">
+        Learn HTMX with Indomart Logo styling
+    </div>
+
+    <main style="padding:1rem;">
+        {{ template "form" . }}
+        <hr>
+        {{ template "display" . }}
+        <footer style="background-color:#808080; color:white; text-align:center; padding:0.5rem; margin-top:1rem;">
+            BE: GO, FE: HTMX
+        </footer>
+    </main>
 </body>
 </html>
 {{ end }}
 
 {{ block "form" . }}
-<form hx-post="/contacts" hx-target="#contacts" hx-swap="innerHTML">
-    name: <input type="text" name="name">
-    email: <input type="text" name="email">
-    <button type="submit">Create Contacts</button>
+<form hx-post="/contacts" hx-target="#contacts" hx-swap="innerHTML" style="margin-bottom:1rem;">
+    <label style="color:#E30613;">Name:</label>
+    <input type="text" name="name" style="background-color: #E30613; color:white;">
+    <br><br>
+    <label style="color:#0066B3;">Email:</label>
+    <input type="text" name="email" style="background-color: #0066B3; color:white;">
+    <br><br>
+    <button type="submit" style="background-color: #FFD100; border:none; padding:0.5rem 1rem; font-weight:bold;">Create Contact</button>
 </form>
 {{ end }}
 
 {{ block "display" . }}
-<div id="contacts" style="display: flex; flex-direction: column;">
+<div id="contacts" style="display: flex; flex-direction: column; background-color: #808080; padding:1rem; border-radius:8px;">
     {{ range .Contacts }}    
-    <div>
-        Name: <span>{{ .Name }}</span>
-        Email: <span>{{ .Email }}</span>
+    <div style="background:white; padding:0.5rem; margin-bottom:0.5rem; border-left:5px solid #0066B3;">
+        Name: <span style="color:#E30613;">{{ .Name }}</span><br>
+        Email: <span style="color:#0066B3;">{{ .Email }}</span>
     </div>
     {{ end }}
 </div>
