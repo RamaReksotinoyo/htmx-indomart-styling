@@ -112,7 +112,6 @@ func main() {
 
 	data := newData()
 
-	// Set up the HTTP server
 	mux := http.NewServeMux()
 	mux.Handle("/", loggingMiddleware(http.HandlerFunc(homeHandler(templates, &data))))
 	mux.Handle("/contacts", loggingMiddleware(http.HandlerFunc(contactHandler(templates, &data))))
