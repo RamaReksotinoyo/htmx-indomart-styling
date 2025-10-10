@@ -1,4 +1,4 @@
-# HTMX Indomaret Styling 🔥
+# HTMX Indomaret Styling
 
 A simple unnecesary management app with Indomaret-inspired styling using HTMX and Go.
 
