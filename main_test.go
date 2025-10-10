@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 	"net/http/httptest"
@@ -155,5 +156,125 @@ func BenchmarkContactHandler(b *testing.B) {
 
 		handler := contactHandler(templates, &data)
 		handler.ServeHTTP(rec, req)
+	}
+}
+
+func TestClearContactsHandler(t *testing.T) {
+	tmpl := template.Must(template.New("display").Parse(`<div>{{len .Contacts}}</div>`))
+	templates := &Templates{templates: tmpl}
+	data := newData()
+
+	if len(data.Contacts) == 0 {
+		t.Fatal("Expected initial contacts to be non-empty")
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/clear-contacts", nil)
+	rec := httptest.NewRecorder()
+
+	handler := clearContactsHandler(templates, &data)
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("Expected status OK, got %v", rec.Code)
+	}
+
+	if len(data.Contacts) != 0 {
+		t.Errorf("Expected contacts cleared, got %d remaining", len(data.Contacts))
+	}
+}
+
+func TestContactCountHandler(t *testing.T) {
+	data := newData()
+	handler := contactCountHandler(&data)
+
+	req := httptest.NewRequest(http.MethodGet, "/contact-count", nil)
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("Expected status OK, got %v", rec.Code)
+	}
+
+	body := rec.Body.String()
+	if !strings.Contains(body, `"count":2`) {
+		t.Errorf("Expected count=2 in response, got %s", body)
+	}
+	if !strings.Contains(body, `"maxLimit":10`) {
+		t.Errorf("Expected maxLimit=10 in response, got %s", body)
+	}
+}
+
+func TestContactHandlerAddSuccess(t *testing.T) {
+	tmpl := template.Must(template.New("display").Parse(`<div>{{range .Contacts}}{{.Name}} {{end}}</div>`))
+	templates := &Templates{templates: tmpl}
+	data := newData()
+
+	form := url.Values{}
+	form.Add("name", "fafifu")
+	form.Add("email", "fafifu@gmail.com")
+
+	req := httptest.NewRequest(http.MethodPost, "/contacts", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := httptest.NewRecorder()
+
+	handler := contactHandler(templates, &data)
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("Expected status OK, got %v", rec.Code)
+	}
+
+	if !data.hasEmail("fafifu@gmail.com") {
+		t.Error("Expected new contact to be added")
+	}
+}
+
+func TestContactHandlerMaxLimit(t *testing.T) {
+	tmpl := template.Must(template.New("display").Parse(`<div>{{.}}</div>`))
+	templates := &Templates{templates: tmpl}
+
+	// Isi data dengan 10 kontak
+	data := Data{}
+	for i := 0; i < 10; i++ {
+		data.Contacts = append(data.Contacts, newContact(
+			"User"+string(rune(i+'A')),
+			fmt.Sprintf("user%d@example.com", i),
+		))
+	}
+
+	form := url.Values{}
+	form.Add("name", "Fafifu User")
+	form.Add("email", "fafifu@gmail.com")
+
+	req := httptest.NewRequest(http.MethodPost, "/contacts", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := httptest.NewRecorder()
+
+	handler := contactHandler(templates, &data)
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("Expected status BadRequest when limit reached, got %v", rec.Code)
+	}
+}
+
+func TestDataHandler(t *testing.T) {
+	tmpl := template.Must(template.New("data").Parse(`<div>{{len .Contacts}}</div>`))
+	templates := &Templates{templates: tmpl}
+	data := newData()
+
+	req := httptest.NewRequest(http.MethodGet, "/data", nil)
+	rec := httptest.NewRecorder()
+
+	handler := dataHandler(templates, &data)
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("Expected status OK, got %v", rec.Code)
+	}
+
+	if !strings.Contains(rec.Body.String(), "2") {
+		t.Errorf("Expected contact count rendered, got %s", rec.Body.String())
 	}
 }

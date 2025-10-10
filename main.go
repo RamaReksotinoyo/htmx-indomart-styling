@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"html/template"
 	"io"
 	"log"
@@ -48,10 +49,25 @@ func dataHandler(t *Templates, data *Data) http.HandlerFunc {
 	}
 }
 
+func contactCountHandler(data *Data) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		response := map[string]interface{}{
+			"count":     len(data.Contacts),
+			"maxLimit":  10,
+			"canAdd":    len(data.Contacts) < 10,
+			"remaining": 10 - len(data.Contacts),
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+	}
+}
+
 func contactHandler(t *Templates, data *Data) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
 		}
 
 		name := r.FormValue("name")
@@ -62,7 +78,29 @@ func contactHandler(t *Templates, data *Data) http.HandlerFunc {
 			return
 		}
 
+		if len(data.Contacts) >= 10 {
+			http.Error(w, "maximum of 10 contacts allowed", http.StatusBadRequest)
+			return
+		}
+
 		data.Contacts = append(data.Contacts, newContact(name, email))
+
+		err := t.Render(w, "display", data, r.Context())
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
+}
+
+func clearContactsHandler(t *Templates, data *Data) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		data.Contacts = []Contact{}
+
 		err := t.Render(w, "display", data, r.Context())
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -115,6 +153,8 @@ func main() {
 	mux := http.NewServeMux()
 	mux.Handle("/", loggingMiddleware(http.HandlerFunc(homeHandler(templates, &data))))
 	mux.Handle("/contacts", loggingMiddleware(http.HandlerFunc(contactHandler(templates, &data))))
+	mux.Handle("/contact-count", loggingMiddleware(http.HandlerFunc(contactCountHandler(&data))))
+	mux.Handle("/clear-contacts", loggingMiddleware(http.HandlerFunc(clearContactsHandler(templates, &data))))
 
 	// Start the server
 	log.Println("Starting server on :8080")

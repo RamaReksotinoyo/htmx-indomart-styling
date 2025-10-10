@@ -6,11 +6,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js" integrity="sha384-ZBXiYtYQ6hJ2Y0ZNoYuI+Nq5MqWBr+chMrS/RkXpNzQCApHEhOt2aY8EJgqwHLkJ" crossorigin="anonymous"></script>
     <title>HTMX 1.0</title>
+    <script>
+        // Check len of contact
+        function checkContactLimit() {
+            const contactCount = document.querySelectorAll('#contacts > div').length;
+            const submitButton = document.querySelector('button[type="submit"]');
+            const warningDiv = document.getElementById('contact-warning');
+            const maxLimit = 10;
+            
+            if (contactCount >= maxLimit) {
+                submitButton.disabled = true;
+                submitButton.style.backgroundColor = '#cccccc';
+                submitButton.style.cursor = 'not-allowed';
+                warningDiv.style.display = 'block';
+                warningDiv.textContent = `Maksimum ${maxLimit} kontak tercapai!`;
+            } else {
+                submitButton.disabled = false;
+                submitButton.style.backgroundColor = '#FFD100';
+                submitButton.style.cursor = 'pointer';
+                warningDiv.style.display = 'block';
+                warningDiv.textContent = `Kontak: ${contactCount}/${maxLimit} (Sisa: ${maxLimit - contactCount})`;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', checkContactLimit);
+
+        document.body.addEventListener('htmx:afterSwap', checkContactLimit);
+    </script>
 </head>
 <body style="font-family: Arial, sans-serif; margin:0; padding:0;">
     <!-- Header -->
     <header style="background-color:#0066B3; color:white; padding:1rem; text-align:center;">
-        <h1 style="background-color: #E30613;">Fafifu</h1>
+        <h1 style="background-color: #E30613;">Fafifu!!</h1>
     </header>
 
     <!-- Alert -->
@@ -22,23 +49,30 @@
         {{ template "form" . }}
         <hr>
         {{ template "display" . }}
-        <footer style="background-color:#808080; color:white; text-align:center; padding:0.5rem; margin-top:1rem;">
-            BE: GO, FE: HTMX
-        </footer>
     </main>
 </body>
 </html>
 {{ end }}
 
 {{ block "form" . }}
+<div id="contact-warning" style="background-color:#E30613; color:white; padding:0.5rem; margin-bottom:1rem; border-radius:4px; text-align:center; font-weight:bold;"></div>
 <form hx-post="/contacts" hx-target="#contacts" hx-swap="innerHTML" style="margin-bottom:1rem;">
     <label style="color:#E30613;">Name:</label>
-    <input type="text" name="name" style="background-color: #E30613; color:white;">
+    <input type="text" name="name" style="background-color: #E30613; color:white;" required>
     <br><br>
     <label style="color:#0066B3;">Email:</label>
-    <input type="text" name="email" style="background-color: #0066B3; color:white;">
+    <input type="text" name="email" style="background-color: #0066B3; color:white;" required>
     <br><br>
-    <button type="submit" style="background-color: #FFD100; border:none; padding:0.5rem 1rem; font-weight:bold;">Create Contact</button>
+    <button type="submit" style="background-color: #FFD100; border:none; padding:0.5rem 1rem; font-weight:bold; margin-right:0.5rem;">Create Contact</button>
+    
+    <button type="button" 
+            hx-post="/clear-contacts" 
+            hx-target="#contacts" 
+            hx-swap="innerHTML"
+            hx-confirm="Apakah Anda yakin ingin menghapus semua kontak?"
+            style="background-color: #E30613; color:white; border:none; padding:0.5rem 1rem; font-weight:bold; cursor:pointer;">
+        Clear All Contacts
+    </button>
 </form>
 {{ end }}
 
